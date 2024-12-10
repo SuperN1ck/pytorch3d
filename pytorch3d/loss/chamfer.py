@@ -82,6 +82,8 @@ def _chamfer_distance_single_direction(
     x_normals,
     y_normals,
     weights,
+    x_point_weights,
+    y_point_weights,
     point_reduction: Union[str, None],
     norm: int,
     abs_cosine: bool,
@@ -106,6 +108,12 @@ def _chamfer_distance_single_direction(
             weights = weights.view(N, 1)
             return ((x.sum((1, 2)) * weights) * 0.0, (x.sum((1, 2)) * weights) * 0.0)
 
+    if x_point_weights is not None:
+        assert x_point_weights.shape == (N, P1)
+        # Weights should sum up to one
+        assert all(torch.isclose(x_point_weights.sum(-1), torch.tensor(1.0)))
+        x_point_weights *= P1
+
     cham_norm_x = x.new_zeros(())
 
     x_nn = knn_points(x, y, lengths1=x_lengths, lengths2=y_lengths, norm=norm, K=1)
@@ -116,6 +124,9 @@ def _chamfer_distance_single_direction(
 
     if weights is not None:
         cham_x *= weights.view(N, 1)
+
+    if x_point_weights is not None:
+        cham_x *= x_point_weights
 
     if return_normals:
         # Gather the normals using the indices and keep only value for k=0
@@ -130,6 +141,9 @@ def _chamfer_distance_single_direction(
 
         if weights is not None:
             cham_norm_x *= weights.view(N, 1)
+
+        if x_point_weights is not None:
+            cham_norm_x *= x_point_weights
 
     if point_reduction == "max":
         assert not return_normals
@@ -181,6 +195,8 @@ def chamfer_distance(
     x_normals=None,
     y_normals=None,
     weights=None,
+    x_point_weights=None,
+    y_point_weights=None,
     batch_reduction: Union[str, None] = "mean",
     point_reduction: Union[str, None] = "mean",
     norm: int = 2,
@@ -254,6 +270,8 @@ def chamfer_distance(
         x_normals,
         y_normals,
         weights,
+        x_point_weights,
+        y_point_weights,
         point_reduction,
         norm,
         abs_cosine,
@@ -270,6 +288,8 @@ def chamfer_distance(
             y_normals,
             x_normals,
             weights,
+            y_point_weights,
+            x_point_weights,
             point_reduction,
             norm,
             abs_cosine,
