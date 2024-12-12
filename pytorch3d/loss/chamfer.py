@@ -112,7 +112,6 @@ def _chamfer_distance_single_direction(
         assert x_point_weights.shape == (N, P1)
         # Weights should sum up to one
         assert all(torch.isclose(x_point_weights.sum(-1), torch.tensor(1.0)))
-        x_point_weights *= P1
 
     cham_norm_x = x.new_zeros(())
 
@@ -126,7 +125,7 @@ def _chamfer_distance_single_direction(
         cham_x *= weights.view(N, 1)
 
     if x_point_weights is not None:
-        cham_x *= x_point_weights
+        cham_x *= x_point_weights * P1
 
     if return_normals:
         # Gather the normals using the indices and keep only value for k=0
@@ -143,7 +142,7 @@ def _chamfer_distance_single_direction(
             cham_norm_x *= weights.view(N, 1)
 
         if x_point_weights is not None:
-            cham_norm_x *= x_point_weights
+            cham_norm_x *= x_point_weights * P1
 
     if point_reduction == "max":
         assert not return_normals
